@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "marcmurhularut@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isBusOwner(busId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/buses/$(busId)).data.ownerId == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /profiles/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == uid;
+      allow update: if (isOwner(uid) && request.resource.data.role == resource.data.role) || isAdmin();
+    }
+
+    match /buses/{busId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // Should probably check role == 'owner'
+      allow update: if isBusOwner(busId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /live_buses/{busId} {
+      allow read: if isAuthenticated();
+      allow write: if isBusOwner(busId) || isAdmin();
+    }
+
+    match /trips/{tripId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // Owner check
+      allow update: if isBusOwner(resource.data.busId) || isAdmin();
+    }
+
+    match /registrations/{regId} {
+      allow read: if isOwner(resource.data.userId) || isBusOwner(resource.data.busId) || isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if (isAuthenticated() && (request.auth.uid == resource.data.userId || isBusOwner(resource.data.busId))) || isAdmin();
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "Profile": {
+      "title": "Profile",
+      "description": "User profile with role and wallet information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["user", "owner", "admin"] },
+        "balance": { "type": "number", "description": "Wallet balance in USD/CDF" },
+        "fullName": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Bus": {
+      "title": "Bus",
+      "description": "Bus vehicle details registered by owners.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "plateNumber": { "type": "string" },
+        "nickname": { "type": "string", "description": "Friendly name like 'Le Brave' or 'Vitesse'" },
+        "qrCodeData": { "type": "string", "description": "The data encoded in the QR code" }
+      },
+      "required": ["id", "ownerId", "plateNumber"]
+    },
+    "LiveBus": {
+      "title": "LiveBus",
+      "description": "Real-time position of an active bus.",
+      "type": "object",
+      "properties": {
+        "busId": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "lastUpdate": { "type": "string", "format": "date-time" },
+        "isOnline": { "type": "boolean" },
+        "currentTripId": { "type": "string" }
+      },
+      "required": ["busId", "lat", "lng", "isOnline"]
+    },
+    "Trip": {
+      "title": "Trip",
+      "description": "A single bus journey instance.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "busId": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "completed", "cancelled"] },
+        "basePrice": { "type": "number" },
+        "pricePerKm": { "type": "number" }
+      },
+      "required": ["id", "busId", "status"]
+    },
+    "Registration": {
+      "title": "Registration",
+      "description": "Mapping a passenger to an active trip.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "tripId": { "type": "string" },
+        "busId": { "type": "string" },
+        "startLat": { "type": "number" },
+        "startLng": { "type": "number" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endLat": { "type": "number" },
+        "endLng": { "type": "number" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["ongoing", "finished"] },
+        "totalCost": { "type": "number" }
+      },
+      "required": ["id", "userId", "tripId", "status"]
+    }
+  },
+  "firestore": {
+    "/profiles/{uid}": { "schema": "Profile", "description": "User profiles" },
+    "/buses/{busId}": { "schema": "Bus", "description": "Buses registry" },
+    "/live_buses/{busId}": { "schema": "LiveBus", "description": "Real-time positions" },
+    "/trips/{tripId}": { "schema": "Trip", "description": "Active for-hire trips" },
+    "/registrations/{regId}": { "schema": "Registration", "description": "Passenger journey records" }
+  }
+}

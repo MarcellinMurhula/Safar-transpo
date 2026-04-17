@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-brand-primary: #ff6b00; /* Design Orange */
+  --color-brand-accent: #00c2ff;  /* Design Blue */
+  --color-brand-warning: #ff3b30; /* Design Red */
+  
+  --color-glass-bg: rgba(255, 255, 255, 0.06);
+  --color-glass-border: rgba(255, 255, 255, 0.12);
+  
+  --color-app-bg: #0a0b0e;
+}
+
+@layer base {
+  body {
+    @apply bg-app-bg text-white antialiased font-sans overflow-x-hidden;
+  }
+}
+
+.frosted-glass {
+  @apply bg-glass-bg backdrop-blur-[25px] border border-glass-border;
+}
+
+/* Backwards compatibility or alternative for existing glass-morphism */
+.glass-morphism {
+  @apply bg-glass-bg backdrop-blur-[25px] border border-glass-border;
+}
+
+.premium-gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-white/80 to-white/40;
+}
+
+/* Decorative Mesh Gradients */
+.background-blobs {
+  @apply fixed inset-0 pointer-events-none z-0;
+}
+
+.blob {
+  @apply absolute rounded-full blur-[80px] opacity-40;
+}
+
+.blob-1 {
+  @apply -top-[100px] -left-[100px] w-[500px] h-[500px];
+  background: radial-gradient(circle, var(--color-brand-primary), transparent);
+}
+
+.blob-2 {
+  @apply -bottom-[50px] -right-[50px] w-[600px] h-[600px];
+  background: radial-gradient(circle, var(--color-brand-accent), transparent);
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+

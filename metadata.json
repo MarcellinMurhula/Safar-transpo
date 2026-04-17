@@ -1,0 +1,9 @@
+{
+  "name": "Safar'Transpo",
+  "description": "Plateforme premium de gestion de transport urbain pour Bukavu (RDC), incluant suivi en temps réel, paiements mobiles et gestion des rôles.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ],
+  "majorCapabilities": []
+}
