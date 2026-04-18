@@ -1,26 +1,66 @@
 import React from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../firebase';
-import { Bus, MapPin, QrCode, ShieldCheck, ArrowRight } from 'lucide-react';
+import { useAuth } from '../authContext';
+import { useNavigate } from 'react-router-dom';
+import { Bus, MapPin, QrCode, ShieldCheck, ArrowRight, AlertTriangle, X, Loader2, User } from 'lucide-react';
 
 export default function Landing() {
+  const { user, setSelectedRole } = useAuth();
+  const navigate = useNavigate();
+  const [isLoggingIn, setIsLoggingIn] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
   const handleLogin = async () => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    setError(null);
     try {
       const provider = new GoogleAuthProvider();
+      // Ensure we don't have overlapping requests
       await signInWithPopup(auth, provider);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Login Error:", err);
+      if (err.code === 'auth/popup-blocked') {
+        setError("Le popup a été bloqué par votre navigateur. Veuillez autoriser les popups pour ce site.");
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        // Ignore this one as it usually means a double-click was prevented or the user clicked away
+      } else {
+        setError("Une erreur est survenue lors de la connexion. Veuillez réessayer.");
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-app-bg selection:bg-brand-primary selection:text-white overflow-hidden relative">
+    <div className="min-h-screen bg-[var(--app-bg)] selection:bg-brand-primary selection:text-white overflow-hidden relative transition-colors duration-300">
       {/* Background Blobs */}
       <div className="background-blobs">
         <div className="blob blob-1"></div>
         <div className="blob blob-2"></div>
       </div>
+
+      {/* Error Message */}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: -100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -100 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-6"
+          >
+            <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold flex items-center gap-3 frosted-glass backdrop-blur-xl">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+              <p>{error}</p>
+              <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-white/10 rounded-lg">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <nav className="fixed top-0 w-full z-50 px-6 py-8 flex justify-between items-center max-w-7xl mx-auto left-0 right-0">
@@ -38,10 +78,11 @@ export default function Landing() {
         <motion.button
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          onClick={handleLogin}
-          className="px-6 py-2 rounded-full glass-morphism text-sm font-medium hover:bg-white hover:text-black transition-all duration-300"
+          disabled={isLoggingIn}
+          onClick={() => user ? navigate('/dashboard') : handleLogin()}
+          className="px-6 py-2 rounded-full glass-morphism text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          Se connecter
+          {isLoggingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : user ? "Mon Dashboard" : "Se connecter"}
         </motion.button>
       </nav>
 
@@ -70,7 +111,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-white/60 text-lg max-w-md mb-10 leading-relaxed"
+              className="text-[var(--app-text)]/60 text-lg max-w-md mb-10 leading-relaxed"
             >
               Simplifiez vos trajets quotidiens à Bukavu. Scannez, voyagez et payez en toute sécurité avec Safar'Transpo.
             </motion.p>
@@ -83,13 +124,34 @@ export default function Landing() {
             >
               <button 
                 onClick={handleLogin}
-                className="px-10 py-5 bg-brand-primary text-white rounded-2xl font-bold flex items-center gap-2 hover:scale-105 transition-all shadow-[0_0_30px_rgba(255,107,0,0.3)] hover:shadow-[0_0_40px_rgba(255,107,0,0.5)]"
+                disabled={isLoggingIn}
+                className="px-10 py-5 bg-brand-primary text-white rounded-2xl font-bold flex items-center gap-2 hover:scale-105 transition-all shadow-[0_0_30px_rgba(255,107,0,0.3)] hover:shadow-[0_0_40px_rgba(255,107,0,0.5)] disabled:opacity-75"
               >
-                Démarrer maintenant <ArrowRight className="w-5 h-5" />
+                {isLoggingIn ? "Connexion..." : "Démarrer (Passager)"} <ArrowRight className="w-5 h-5" />
               </button>
-              <button className="px-10 py-5 frosted-glass rounded-2xl font-medium hover:bg-white/10 transition-colors">
+              <button 
+                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-10 py-5 frosted-glass rounded-2xl font-medium hover:bg-white/10 transition-colors"
+              >
                 En savoir plus
               </button>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="mt-12 flex flex-col gap-4"
+            >
+              <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2">Autres accès</p>
+              <div className="flex flex-wrap gap-4">
+                <button 
+                  onClick={handleLogin}
+                  className="px-6 py-3 rounded-xl frosted-glass border border-white/5 hover:border-brand-primary/40 text-xs font-bold transition-all text-white/60 hover:text-white flex items-center gap-2"
+                >
+                  <User className="w-4 h-4 text-brand-primary" /> Espace Propriétaire
+                </button>
+              </div>
             </motion.div>
           </div>
 
@@ -116,7 +178,7 @@ export default function Landing() {
         </div>
 
         {/* Feature Grid */}
-        <section className="mt-40 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <section id="features" className="mt-40 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { icon: MapPin, title: "Suivi Live", desc: "Localisez les bus en temps réel sur la carte de Bukavu." },
             { icon: QrCode, title: "QR Ticketing", desc: "Payez votre course en un scan. Fini les soucis de monnaie." },
@@ -139,12 +201,26 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="py-20 px-6 max-w-7xl mx-auto border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-10 text-white/30 text-xs uppercase tracking-widest font-mono">
-        <p>© 2026 Safar'Transpo — Mairie de Bukavu</p>
+      <footer className="py-20 px-6 max-w-7xl mx-auto border-t border-[var(--glass-border)] flex flex-col md:flex-row justify-between items-center gap-10 text-[var(--app-text)]/30 text-xs uppercase tracking-widest font-mono">
+        <p>
+          © 2026 Safar'Transpo — 
+          <span 
+            onClick={() => {
+              if (user && user.email === 'marcmurhularut@gmail.com') {
+                setSelectedRole('admin');
+                navigate('/dashboard');
+              } else {
+                handleLogin();
+              }
+            }} 
+            className="cursor-default ml-1 transition-none select-none"
+          >
+            Mairie de Bukavu
+          </span>
+        </p>
         <div className="flex gap-8">
           <a href="#" className="hover:text-white transition-colors">Confidentialité</a>
           <a href="#" className="hover:text-white transition-colors">Conditions</a>
-          <a href="#" className="hover:text-white transition-colors">Support</a>
         </div>
       </footer>
     </div>

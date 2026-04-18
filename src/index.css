@@ -16,22 +16,38 @@
 }
 
 @layer base {
+  :root {
+    --app-bg: #f8fafc;
+    --app-text: #0f172a;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --blob-opacity: 0.15;
+  }
+
+  .dark {
+    --app-bg: #0a0b0e;
+    --app-text: #ffffff;
+    --glass-bg: rgba(255, 255, 255, 0.06);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --blob-opacity: 0.4;
+  }
+
   body {
-    @apply bg-app-bg text-white antialiased font-sans overflow-x-hidden;
+    @apply bg-[var(--app-bg)] text-[var(--app-text)] antialiased font-sans overflow-x-hidden transition-colors duration-300;
   }
 }
 
 .frosted-glass {
-  @apply bg-glass-bg backdrop-blur-[25px] border border-glass-border;
+  @apply bg-[var(--glass-bg)] backdrop-blur-[25px] border border-[var(--glass-border)];
 }
 
 /* Backwards compatibility or alternative for existing glass-morphism */
 .glass-morphism {
-  @apply bg-glass-bg backdrop-blur-[25px] border border-glass-border;
+  @apply bg-[var(--glass-bg)] backdrop-blur-[25px] border border-[var(--glass-border)];
 }
 
 .premium-gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-white/80 to-white/40;
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-[var(--app-text)] via-[var(--app-text)]/80 to-[var(--app-text)]/40;
 }
 
 /* Decorative Mesh Gradients */
@@ -40,7 +56,7 @@
 }
 
 .blob {
-  @apply absolute rounded-full blur-[80px] opacity-40;
+  @apply absolute rounded-full blur-[80px] opacity-[var(--blob-opacity)] transition-opacity duration-700;
 }
 
 .blob-1 {

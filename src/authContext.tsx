@@ -1,69 +1,125 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { doc, onSnapshot, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth, db, handleFirestoreError, OperationType } from './firebase';
 
 interface Profile {
   uid: string;
   email: string;
   role: 'user' | 'owner' | 'admin';
+  status?: 'pending' | 'accepted' | 'rejected';
   balance: number;
   fullName: string;
+  theme?: 'light' | 'dark';
 }
 
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  selectedRole: 'user' | 'owner' | 'admin' | null;
+  setSelectedRole: (role: 'user' | 'owner' | 'admin') => void;
+  toggleTheme: () => void;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, profile: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ 
+  user: null, 
+  profile: null, 
+  loading: true,
+  selectedRole: null,
+  setSelectedRole: () => {},
+  toggleTheme: () => {}
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedRole, setSelectedRole] = useState<'user' | 'owner' | 'admin' | null>(null);
+
+  const toggleTheme = async () => {
+    if (!profile) return;
+    const newTheme = profile.theme === 'light' ? 'dark' : 'light';
+    try {
+      await updateDoc(doc(db, 'profiles', profile.uid), { theme: newTheme });
+    } catch (err) {
+      console.error("Error toggling theme:", err);
+    }
+  };
 
   useEffect(() => {
+    // Apply theme to document
+    if (profile?.theme) {
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(profile.theme);
+    } else {
+      document.documentElement.classList.add('dark'); // Default
+    }
+  }, [profile?.theme]);
+
+  useEffect(() => {
+    let unsubscribeProfile: (() => void) | null = null;
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (u) => {
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+
       setUser(u);
       if (u) {
+        const userPath = `profiles/${u.uid}`;
         const userDocRef = doc(db, 'profiles', u.uid);
         
-        // Listen to profile changes
-        const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+        unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
-            setProfile(docSnap.data() as Profile);
+            const data = docSnap.data() as Profile;
+            // Force admin role for Marcellin Murhula
+            if (data.email === 'marcmurhularut@gmail.com' && data.role !== 'admin') {
+              updateDoc(userDocRef, { role: 'admin' }).catch(() => {});
+              setProfile({ ...data, role: 'admin' });
+              if (!selectedRole) setSelectedRole('admin');
+            } else {
+              setProfile(data);
+              if (!selectedRole) setSelectedRole(data.role);
+            }
           } else {
-            // First time login - set default profile
+            const isMarcellin = u.email === 'marcmurhularut@gmail.com';
             const newProfile: Profile = {
               uid: u.uid,
               email: u.email || '',
-              role: 'user', // Default role
+              role: isMarcellin ? 'admin' : 'user',
+              status: isMarcellin ? 'accepted' : 'accepted', // Users/Admins auto-accept, Owners pending
               balance: 0,
               fullName: u.displayName || 'Utilisateur',
+              theme: 'dark'
             };
-            setDoc(userDocRef, newProfile);
+            setDoc(userDocRef, newProfile).catch(err => {
+              handleFirestoreError(err, OperationType.WRITE, userPath);
+            });
             setProfile(newProfile);
+            if (!selectedRole) setSelectedRole(newProfile.role);
           }
           setLoading(false);
         }, (err) => {
-           console.error("Profile onSnapshot error:", err);
+           handleFirestoreError(err, OperationType.GET, userPath);
            setLoading(false);
         });
-
-        return () => unsubscribeProfile();
       } else {
         setProfile(null);
+        setSelectedRole(null);
         setLoading(false);
       }
     });
 
-    return () => unsubscribeAuth();
-  }, []);
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
+  }, [selectedRole]);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading }}>
+    <AuthContext.Provider value={{ user, profile, loading, selectedRole, setSelectedRole, toggleTheme }}>
       {children}
     </AuthContext.Provider>
   );

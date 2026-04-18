@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './authContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2 } from 'lucide-react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy load pages for performance
 import React, { Suspense, lazy } from 'react';
@@ -17,7 +18,7 @@ const DashboardOW = lazy(() => import('./pages/DashboardOW'));
 const DashboardAD = lazy(() => import('./pages/DashboardAD'));
 
 function AppRoutes() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, selectedRole } = useAuth();
 
   if (loading) {
     return (
@@ -37,13 +38,13 @@ function AppRoutes() {
   return (
     <Suspense fallback={null}>
       <Routes>
-        <Route path="/" element={!user ? <Landing /> : <Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Landing />} />
         
         {/* Protected Dashboard Route with Role-based redirection */}
         <Route path="/dashboard" element={
           user ? (
-            profile?.role === 'admin' ? <DashboardAD /> :
-            profile?.role === 'owner' ? <DashboardOW /> :
+            selectedRole === 'admin' ? <DashboardAD /> :
+            selectedRole === 'owner' ? <DashboardOW /> :
             <DashboardUS />
           ) : <Navigate to="/" replace />
         } />
@@ -56,13 +57,15 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AnimatePresence mode="wait">
-          <AppRoutes />
-        </AnimatePresence>
-      </Router>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <AnimatePresence mode="wait">
+            <AppRoutes />
+          </AnimatePresence>
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

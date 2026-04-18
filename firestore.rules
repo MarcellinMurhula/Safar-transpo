@@ -1,59 +1,109 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-    function isAuthenticated() {
-      return request.auth != null;
-    }
     
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
+    // ============================================
+    // 1. GLOBAL HELPERS & PRIMITIVES
+    // ============================================
+    
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 64; }
+    
+    // Admin check: Trusted email or role in profile
     function isAdmin() {
-      return isAuthenticated() && 
-        (get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin' ||
-         (request.auth.token.email == "marcmurhularut@gmail.com" && request.auth.token.email_verified == true));
+      return isSignedIn() && (
+        request.auth.token.email == "marcmurhularut@gmail.com" ||
+        (exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin')
+      );
     }
 
+    // Bus ownership check
     function isBusOwner(busId) {
-      return isAuthenticated() && get(/databases/$(database)/documents/buses/$(busId)).data.ownerId == request.auth.uid;
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/buses/$(busId)) &&
+        get(/databases/$(database)/documents/buses/$(busId)).data.ownerId == request.auth.uid;
     }
 
-    // ===============================================================
-    // Rules
-    // ===============================================================
+    // ============================================
+    // 2. VALIDATION BLUEPRINTS
+    // ============================================
+
+    function isValidProfile(data) {
+      return data.uid is string && 
+             data.email is string && 
+             data.role in ['user', 'owner', 'admin'] &&
+             (!('balance' in data) || data.balance is number) &&
+             (!('status' in data) || data.status in ['pending', 'accepted', 'rejected']);
+    }
+
+    function isValidAlert(data) {
+      return data.userId == request.auth.uid &&
+             data.type is string &&
+             data.status in ['new', 'resolved'] &&
+             data.timestamp == request.time;
+    }
+
+    // ============================================
+    // 3. COLLECTION RULES
+    // ============================================
+
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
 
     match /profiles/{uid} {
       allow read: if isOwner(uid) || isAdmin();
-      allow create: if isAuthenticated() && request.auth.uid == uid;
-      allow update: if (isOwner(uid) && request.resource.data.role == resource.data.role) || isAdmin();
+      allow create: if isOwner(uid) && isValidProfile(incoming());
+      allow update: if (isOwner(uid) && incoming().role == existing().role && incoming().balance == existing().balance) || isAdmin();
+      
+      // Allow admin to list pending owners
+      allow list: if isAdmin();
     }
 
     match /buses/{busId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated(); // Should probably check role == 'owner'
+      allow read: if isSignedIn();
+      allow create: if isSignedIn(); // Add strict owner role check if needed
       allow update: if isBusOwner(busId) || isAdmin();
       allow delete: if isAdmin();
     }
 
     match /live_buses/{busId} {
-      allow read: if isAuthenticated();
+      allow read: if isSignedIn();
       allow write: if isBusOwner(busId) || isAdmin();
     }
 
     match /trips/{tripId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated(); // Owner check
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
       allow update: if isBusOwner(resource.data.busId) || isAdmin();
     }
 
     match /registrations/{regId} {
-      allow read: if isOwner(resource.data.userId) || isBusOwner(resource.data.busId) || isAdmin();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if (isAuthenticated() && (request.auth.uid == resource.data.userId || isBusOwner(resource.data.busId))) || isAdmin();
+      // Secure list query: user can only see their own, or owner can see their bus's
+      allow list: if isOwner(resource.data.userId) || isBusOwner(resource.data.busId) || isAdmin();
+      allow get: if isOwner(resource.data.userId) || isBusOwner(resource.data.busId) || isAdmin();
+      
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if (isSignedIn() && (request.auth.uid == existing().userId || isBusOwner(existing().busId))) || isAdmin();
+    }
+
+    match /config/{configId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /alerts/{alertId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn() && isValidAlert(incoming());
+      allow update: if isAdmin();
+      
+      // Allow list for admin radar
+      allow list: if isAdmin();
     }
   }
 }

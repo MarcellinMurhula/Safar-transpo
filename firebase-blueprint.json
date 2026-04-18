@@ -74,6 +74,34 @@
         "totalCost": { "type": "number" }
       },
       "required": ["id", "userId", "tripId", "status"]
+    },
+    "Config": {
+      "title": "Config",
+      "description": "Global application configuration like pricing rates.",
+      "type": "object",
+      "properties": {
+        "basePrice": { "type": "number" },
+        "pricePerKm": { "type": "number" },
+        "fuelBasePrice": { "type": "number" },
+        "roadStateFactor": { "type": "number" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Alert": {
+      "title": "Alert",
+      "description": "Incident reports for city security.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "busId": { "type": "string" },
+        "status": { "type": "string", "enum": ["new", "resolved"] }
+      },
+      "required": ["userId", "type", "status"]
     }
   },
   "firestore": {
@@ -81,6 +109,8 @@
     "/buses/{busId}": { "schema": "Bus", "description": "Buses registry" },
     "/live_buses/{busId}": { "schema": "LiveBus", "description": "Real-time positions" },
     "/trips/{tripId}": { "schema": "Trip", "description": "Active for-hire trips" },
-    "/registrations/{regId}": { "schema": "Registration", "description": "Passenger journey records" }
+    "/registrations/{regId}": { "schema": "Registration", "description": "Passenger journey records" },
+    "/config/{configId}": { "schema": "Config", "description": "App settings" },
+    "/alerts/{alertId}": { "schema": "Alert", "description": "Security alerts" }
   }
 }
