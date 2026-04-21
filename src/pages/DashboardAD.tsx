@@ -131,10 +131,10 @@ export default function DashboardAD() {
                   exit={{ opacity: 0, scale: 0.98 }}
                   className="flex-1 min-h-[600px] rounded-[3rem] frosted-glass overflow-hidden relative border-brand-primary/10"
                 >
-                  <div className="absolute inset-0 bg-[#0A0B0E] flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 dark:bg-[#0A0B0E] flex items-center justify-center">
                     {/* Radar Grid */}
-                    <div className="absolute w-[900px] h-[900px] border border-white/5 rounded-full" />
-                    <div className="absolute w-[600px] h-[600px] border border-white/5 rounded-full" />
+                    <div className="absolute w-[900px] h-[900px] border border-[var(--glass-border)] rounded-full" />
+                    <div className="absolute w-[600px] h-[600px] border border-[var(--glass-border)] rounded-full" />
                     <div className="absolute w-[300px] h-[300px] border border-brand-primary/20 rounded-full" />
                     
                     {/* Radar Sweep */}
@@ -154,7 +154,7 @@ export default function DashboardAD() {
                     })}
 
                     {liveBuses.length === 0 && (
-                      <div className="text-white/10 flex flex-col items-center gap-4 animate-pulse">
+                      <div className="text-[var(--app-text)]/10 flex flex-col items-center gap-4 animate-pulse">
                         <Radio className="w-16 h-16" />
                         <p className="text-sm font-medium">Recherche de signaux GPS en cours...</p>
                       </div>
@@ -429,7 +429,7 @@ function AlertItem({ id, type, bus, time, loc, level }: { id: string, type: stri
   const dotColor = level === 'critical' ? 'bg-red-500 shadow-red-500/50' : level === 'warning' ? 'bg-orange-500 shadow-orange-500/50' : 'bg-blue-500 shadow-blue-500/50';
   
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-2xl bg-white/3 hover:bg-white/5 border border-white/5 transition-colors group relative">
+    <div className="flex flex-col gap-3 p-4 rounded-2xl bg-black/5 dark:bg-white/3 hover:bg-black/10 dark:hover:bg-white/5 border border-[var(--glass-border)] transition-colors group relative">
        <div className="flex items-center gap-4">
           <div className={cn("w-2 h-2 rounded-full shadow-[0_0_10px]", dotColor)} />
           <div className="flex-1 overflow-hidden">

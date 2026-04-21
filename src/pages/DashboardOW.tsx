@@ -121,6 +121,10 @@ export default function DashboardOW() {
 
   const handleAddBus = async () => {
     if (!newBus.plate) return;
+    if (buses.length >= 1) {
+      alert("En tant que propriétaire, vous ne pouvez gérer qu'un seul véhicule sur ce compte conformément à la réglementation de la Mairie.");
+      return;
+    }
     try {
       const busId = `bus_${Math.random().toString(36).substring(2, 11)}`;
       const qrData = await QRCode.toDataURL(busId);
@@ -160,7 +164,7 @@ export default function DashboardOW() {
               <Loader2 className="w-10 h-10 text-brand-warning animate-spin" />
             </div>
             <h2 className="text-3xl font-bold tracking-tighter mb-4">Demande en cours...</h2>
-            <p className="text-white/60 leading-relaxed mb-8">
+            <p className="text-xs text-[var(--app-text)]/60 leading-relaxed mb-8">
               Votre compte propriétaire est en cours de vérification par l'administration de la Mairie. Vous recevrez une notification dès que votre accès sera validé.
             </p>
             <div className="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-xs text-black/40 dark:text-white/40 italic">
@@ -221,7 +225,7 @@ export default function DashboardOW() {
         {/* Radar View for Owner */}
         <div className="lg:col-span-12 space-y-6">
            <div className="p-8 rounded-[3rem] frosted-glass relative overflow-hidden h-[400px]">
-              <div className="absolute inset-0 bg-[#0A0B0E] flex items-center justify-center opacity-50">
+              <div className="absolute inset-0 bg-black/40 dark:bg-[#0A0B0E] flex items-center justify-center opacity-50">
                  <div className="absolute w-[600px] h-[600px] border border-white/5 rounded-full" />
                  <div className="absolute w-[300px] h-[300px] border border-white/5 rounded-full" />
                  <motion.div 
@@ -249,7 +253,7 @@ export default function DashboardOW() {
                     <p className="text-[10px] font-bold uppercase tracking-widest text-brand-accent">Système Radar de Conduite</p>
                  </div>
                  <h4 className="text-2xl font-bold tracking-tighter">Flux de Transport Bukavu</h4>
-                 <p className="text-white/40 text-xs mt-2">Visualisez les autres transporteurs en temps réel pour optimiser vos trajets.</p>
+                 <p className="text-[var(--app-text)]/40 text-xs mt-2">Visualisez les autres transporteurs en temps réel pour optimiser vos trajets.</p>
               </div>
            </div>
         </div>
@@ -540,8 +544,8 @@ export default function DashboardOW() {
               </div>
 
               <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-black/40 border border-white/10">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Description / Détails de l'incident</p>
+                <div className="p-4 rounded-2xl bg-black/5 dark:bg-black/40 border border-[var(--glass-border)]">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--app-text)]/40 mb-2">Description / Détails de l'incident</p>
                   <textarea 
                     value={alertDesc}
                     onChange={(e) => setAlertDesc(e.target.value)}

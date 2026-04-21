@@ -173,7 +173,7 @@ export default function Layout({ children, title }: LayoutProps) {
                animate={{ x: 0 }}
                exit={{ x: '-100%' }}
                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-               className="relative w-80 bg-white dark:bg-zinc-950 h-full p-8 flex flex-col shadow-2xl"
+               className="relative w-80 bg-[var(--app-bg)] h-full p-8 flex flex-col shadow-2xl"
              >
                 <div className="flex items-center justify-between mb-10">
                    <div className="flex items-center gap-3">
@@ -343,7 +343,7 @@ function NavItem({ icon: Icon, label, active = false, onClick }: { icon: any, la
       onClick={onClick}
       className={cn(
         "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group",
-        active ? "bg-brand-primary text-white" : "text-black/40 dark:text-white/40 hover:text-white hover:bg-white/5"
+        active ? "bg-brand-primary text-white" : "text-black/40 dark:text-white/40 hover:text-[var(--app-text)] hover:bg-[var(--app-text)]/5"
       )}
     >
       <Icon className={cn("w-5 h-5", active ? "text-white" : "text-black/20 dark:text-white/20 group-hover:text-black/60 dark:group-hover:text-white/60")} />

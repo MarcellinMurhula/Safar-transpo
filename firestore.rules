@@ -59,7 +59,7 @@ service cloud.firestore {
     match /profiles/{uid} {
       allow read: if isOwner(uid) || isAdmin();
       allow create: if isOwner(uid) && isValidProfile(incoming());
-      allow update: if (isOwner(uid) && incoming().role == existing().role && incoming().balance == existing().balance) || isAdmin();
+      allow update: if (isOwner(uid) && incoming().role == existing().role) || isAdmin();
       
       // Allow admin to list pending owners
       allow list: if isAdmin();

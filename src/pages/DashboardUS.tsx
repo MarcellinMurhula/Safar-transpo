@@ -141,6 +141,12 @@ export default function DashboardUS() {
           throw new Error("Bus non trouvé");
         }
 
+        if ((profile?.balance || 0) < pricing.basePrice) {
+          alert(`Solde insuffisant (${formatCurrency(profile?.balance || 0)}). Le prix de base est de ${formatCurrency(pricing.basePrice)}. Veuillez recharger.`);
+          setShowScanner(false);
+          return;
+        }
+
         const regPath = 'registrations';
         await addDoc(collection(db, regPath), {
           userId: user?.uid,
@@ -345,16 +351,16 @@ export default function DashboardUS() {
       {/* Recharge Modal */}
       <AnimatePresence>
         {showRecharge && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/40 dark:bg-black/90 backdrop-blur-md">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-md frosted-glass rounded-[2.5rem] p-10 relative overflow-hidden"
+              className="w-full max-w-md frosted-glass rounded-[2.5rem] p-10 relative overflow-hidden text-[var(--app-text)]"
             >
               <button 
                 onClick={() => setShowRecharge(false)}
-                className="absolute top-8 right-8 p-2 rounded-xl frosted-glass text-white/40 hover:text-white"
+                className="absolute top-8 right-8 p-2 rounded-xl frosted-glass text-[var(--app-text)]/40 hover:text-[var(--app-text)]"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -470,13 +476,13 @@ export default function DashboardUS() {
             >
               <button 
                 onClick={() => setShowAlert(false)}
-                className="absolute top-8 right-8 p-2 rounded-xl frosted-glass text-white/40 hover:text-white"
+                className="absolute top-8 right-8 p-2 rounded-xl frosted-glass text-[var(--app-text)]/40 hover:text-[var(--app-text)]"
               >
                 <X className="w-5 h-5" />
               </button>
 
               <h4 className="text-2xl font-bold mb-2 tracking-tighter text-brand-warning">Signaler une Alerte</h4>
-              <p className="text-xs text-white/40 mb-8 uppercase tracking-widest font-bold">Aidez-nous à sécuriser Bukavu</p>
+              <p className="text-xs text-[var(--app-text)]/40 mb-8 uppercase tracking-widest font-bold">Aidez-nous à sécuriser Bukavu</p>
 
               <div className="grid grid-cols-2 gap-3 mb-8">
                 {alertCategories.map((cat) => (
@@ -497,13 +503,13 @@ export default function DashboardUS() {
               </div>
 
               <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-black/40 border border-white/10">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Description locale / Détails</p>
+                <div className="p-4 rounded-2xl bg-black/5 dark:bg-black/40 border border-[var(--glass-border)]">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--app-text)]/40 mb-2">Description locale / Détails</p>
                   <textarea 
                     value={alertDesc}
                     onChange={(e) => setAlertDesc(e.target.value)}
                     placeholder="Ex: Vol au niveau de la Place de l'indépendance..."
-                    className="w-full bg-transparent text-sm focus:outline-none min-h-[100px] resize-none"
+                    className="w-full bg-transparent text-sm focus:outline-none min-h-[100px] resize-none text-[var(--app-text)]"
                   />
                 </div>
 
@@ -525,11 +531,11 @@ export default function DashboardUS() {
 
 function StatCard({ icon: Icon, label, value }: { icon: any, label: string, value: string }) {
   return (
-    <div className="p-6 rounded-[2rem] frosted-glass border border-white/5 flex flex-col gap-3">
+    <div className="p-6 rounded-[2rem] frosted-glass border border-[var(--glass-border)] flex flex-col gap-3">
       <Icon className="w-5 h-5 text-brand-primary/40" />
       <div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-black/40 dark:text-white/40">{label}</p>
-        <p className="text-xl font-bold leading-none tracking-tight">{value}</p>
+        <p className="text-xl font-bold leading-none tracking-tight text-[var(--app-text)]">{value}</p>
       </div>
     </div>
   );
