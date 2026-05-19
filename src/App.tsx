@@ -16,6 +16,7 @@ const Landing = lazy(() => import('./pages/Landing'));
 const DashboardUS = lazy(() => import('./pages/DashboardUS'));
 const DashboardOW = lazy(() => import('./pages/DashboardOW'));
 const DashboardAD = lazy(() => import('./pages/DashboardAD'));
+const DashboardDR = lazy(() => import('./pages/DashboardDR'));
 
 function AppRoutes() {
   const { user, profile, loading, selectedRole } = useAuth();
@@ -45,6 +46,7 @@ function AppRoutes() {
           user ? (
             selectedRole === 'admin' ? <DashboardAD /> :
             selectedRole === 'owner' ? <DashboardOW /> :
+            selectedRole === 'driver' ? <DashboardDR /> :
             <DashboardUS />
           ) : <Navigate to="/" replace />
         } />

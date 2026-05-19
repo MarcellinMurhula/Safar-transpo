@@ -2,7 +2,7 @@
   "entities": {
     "Profile": {
       "title": "Profile",
-      "description": "User profile with role and wallet information.",
+      "description": "User profile with role, wallet, and owner registration info.",
       "type": "object",
       "properties": {
         "uid": { "type": "string", "description": "Firebase Auth UID" },
@@ -10,9 +10,42 @@
         "role": { "type": "string", "enum": ["user", "owner", "admin"] },
         "balance": { "type": "number", "description": "Wallet balance in USD/CDF" },
         "fullName": { "type": "string" },
-        "photoURL": { "type": "string", "format": "uri" }
+        "photoURL": { "type": "string", "format": "uri" },
+        "isApproved": { "type": "boolean", "description": "Admin approval for owners" },
+        "ownerDetails": {
+          "type": "object",
+          "properties": {
+            "mobileMoney": {
+              "type": "object",
+              "properties": {
+                "orange": { "type": "string" },
+                "airtel": { "type": "string" },
+                "vodacom": { "type": "string" },
+                "africell": { "type": "string" }
+              }
+            },
+            "vehicleType": { "type": "string" },
+            "vehicleYear": { "type": "string" },
+            "registrationId": { "type": "string", "description": "ID given by town hall" }
+          }
+        }
       },
       "required": ["uid", "email", "role"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "History of financial movements and actions.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["deposit", "payment", "tax"] },
+        "amount": { "type": "number" },
+        "taxAmount": { "type": "number" },
+        "description": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" }
+      },
+      "required": ["userId", "type", "amount", "timestamp"]
     },
     "Bus": {
       "title": "Bus",
@@ -21,9 +54,14 @@
       "properties": {
         "id": { "type": "string" },
         "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
         "plateNumber": { "type": "string" },
-        "nickname": { "type": "string", "description": "Friendly name like 'Le Brave' or 'Vitesse'" },
-        "qrCodeData": { "type": "string", "description": "The data encoded in the QR code" }
+        "nickname": { "type": "string" },
+        "vehicleType": { "type": "string" },
+        "vehicleYear": { "type": "string" },
+        "mobileMoneyAccounts": { "type": "object" },
+        "qrCodeData": { "type": "string" },
+        "isApproved": { "type": "boolean" }
       },
       "required": ["id", "ownerId", "plateNumber"]
     },
@@ -110,6 +148,8 @@
     "/live_buses/{busId}": { "schema": "LiveBus", "description": "Real-time positions" },
     "/trips/{tripId}": { "schema": "Trip", "description": "Active for-hire trips" },
     "/registrations/{regId}": { "schema": "Registration", "description": "Passenger journey records" },
+    "/ledger/{entryId}": { "schema": "Transaction", "description": "Append-only financial ledger" },
+    "/transactions/{txId}": { "schema": "Transaction", "description": "Financial records (History)" },
     "/config/{configId}": { "schema": "Config", "description": "App settings" },
     "/alerts/{alertId}": { "schema": "Alert", "description": "Security alerts" }
   }

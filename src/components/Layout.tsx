@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../authContext';
 import { auth, db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { LogOut, User, Bell, Bus, Settings, X, ShieldCheck, CreditCard, Clock, Menu, Sun, Moon, Home, ChevronLeft, DollarSign } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Globe, LogOut, User, Bell, Bus, Settings, X, ShieldCheck, CreditCard, Clock, Menu, Sun, Moon, Home, ChevronLeft, DollarSign } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -14,6 +15,7 @@ interface LayoutProps {
 
 export default function Layout({ children, title }: LayoutProps) {
   const { profile, selectedRole, setSelectedRole, toggleTheme } = useAuth();
+  const { t, i18n } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,54 +26,108 @@ export default function Layout({ children, title }: LayoutProps) {
 
   const getRoleLabel = () => {
     switch(selectedRole) {
-      case 'admin': return 'Administrateur';
-      case 'owner': return 'Propriétaire';
-      default: return 'Passager Premium';
+      case 'admin': return t('admin');
+      case 'owner': return t('owner');
+      case 'driver': return t('driver');
+      default: return t('passenger');
     }
   };
 
   const navItems = [
-    { icon: Bus, label: "Tableau de Bord", path: "/dashboard", roles: ['user', 'owner', 'admin'] },
-    { icon: Bell, label: "Notifications", onClick: () => setShowNotifications(true), roles: ['user', 'owner', 'admin'] },
-    { icon: Settings, label: "Paramètres", onClick: () => setShowSettings(true), roles: ['user', 'owner', 'admin'] },
+    { icon: Bus, label: t('dashboard'), path: "/dashboard", roles: ['user', 'owner', 'admin', 'driver'] },
+    { icon: Bell, label: t('notifications'), onClick: () => setShowNotifications(true), roles: ['user', 'owner', 'admin', 'driver'] },
+    { icon: Settings, label: t('settings'), onClick: () => setShowSettings(true), roles: ['user', 'owner', 'admin', 'driver'] },
   ];
 
   const isAdmin = profile?.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] relative overflow-hidden transition-colors duration-300">
+    <div className="min-h-[100dvh] bg-[var(--app-bg)] text-[var(--app-text)] relative transition-colors duration-300">
       {/* Background Blobs - Visible only in Dark mode for aesthetic */}
       <div className="background-blobs opacity-50 dark:opacity-100">
         <div className="blob blob-1"></div>
         <div className="blob blob-2"></div>
       </div>
 
-      <div className="relative z-10 p-4 md:p-6 h-screen flex gap-6 overflow-hidden">
+      <div className="relative z-10 p-4 md:p-6 min-h-[100dvh] flex flex-col lg:flex-row gap-6">
         {/* Sidebar - Desktop */}
-        <aside className="hidden lg:flex w-80 flex-col frosted-glass rounded-[24px] p-6 shrink-0 h-full overflow-y-auto">
+        <aside className="hidden lg:flex w-80 flex-col frosted-glass rounded-[24px] p-6 shrink-0 sticky top-6 h-[calc(100vh-3rem)] overflow-y-auto">
           <div className="pb-8 border-b border-glass-border flex items-center gap-3">
             <div className="w-12 h-12 bg-brand-primary rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(255,107,0,0.3)]">
               <Bus className="text-white w-7 h-7" />
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-bold tracking-tighter leading-none">Safar'Transpo</span>
-              <span className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40 mt-1">Bukavu, RDC</span>
+              <span className="text-[10px] uppercase tracking-widest text-app-secondary mt-1">Bukavu, RDC</span>
             </div>
           </div>
 
           <div className="mt-8 mb-4">
-             <div className="flex items-center gap-4 mb-1">
+             <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-brand-primary flex items-center justify-center font-bold text-lg text-white">
                    {profile?.fullName?.substring(0, 2).toUpperCase() || 'ST'}
                 </div>
                 <div className="flex-1 truncate">
                    <p className="text-sm font-bold truncate leading-none">{profile?.fullName}</p>
-                   <p className="text-[10px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">{getRoleLabel()}</p>
+                   <p className="text-[10px] text-app-secondary uppercase tracking-widest mt-1">{getRoleLabel()}</p>
                 </div>
+             </div>
+             
+             {/* Language Selector Sidebar */}
+             <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-xl gap-1 border border-glass-border">
+                {['fr', 'en', 'sw'].map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => i18n.changeLanguage(lang)}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-[9px] font-bold uppercase transition-all",
+                      i18n.language.startsWith(lang) ? "bg-brand-primary text-white shadow-md" : "text-app-secondary hover:bg-black/5 dark:hover:bg-white/5"
+                    )}
+                  >
+                    {lang === 'fr' ? 'FR' : lang === 'en' ? 'EN' : 'SW'}
+                  </button>
+                ))}
              </div>
           </div>
 
-          {/* Removed Role Switcher as per user request (Only accessible via footer link) */}
+          {/* Role Switcher for users with multiple roles or Admins */}
+          {(isAdmin || (profile?.roles && profile.roles.length > 1)) && (
+            <div className="mb-6 p-2 bg-black/5 dark:bg-white/5 rounded-2xl border border-glass-border">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-app-secondary mb-2 px-2">{t('access_mode')}</p>
+              <div className="flex flex-col gap-1">
+                {/* Ensure Administration is always visible for real admins to facilitate navigation */}
+                {profile?.roles?.includes('admin') && selectedRole !== 'admin' && (
+                  <button
+                    onClick={() => {
+                      setSelectedRole('admin');
+                      navigate('/dashboard');
+                    }}
+                    className="w-full px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider text-brand-accent border border-brand-accent/20 hover:bg-brand-accent/5 transition-all mb-1 flex items-center justify-center gap-2"
+                  >
+                     <ShieldCheck className="w-3 h-3" />
+                     {t('administration')}
+                  </button>
+                )}
+                {profile?.roles?.filter(r => r !== 'admin').map(role => (
+                    <button
+                      key={role}
+                      onClick={() => {
+                        setSelectedRole(role);
+                        navigate('/dashboard');
+                      }}
+                      className={cn(
+                        "w-full px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2",
+                        selectedRole === role 
+                          ? "bg-brand-primary text-white shadow-lg" 
+                          : "text-app-secondary hover:bg-black/5 dark:hover:bg-white/5"
+                      )}
+                    >
+                      {role === 'owner' ? t('owner') : role === 'driver' ? t('driver') : t('passenger')}
+                    </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <nav className="flex-1 space-y-2 mt-4">
             {navItems.map((item, idx) => (
@@ -85,7 +141,7 @@ export default function Layout({ children, title }: LayoutProps) {
             ))}
             <NavItem 
               icon={Home} 
-              label="Quitter vers l'accueil" 
+              label={t('exit_to_home')} 
               onClick={() => navigate('/')} 
             />
           </nav>
@@ -93,65 +149,65 @@ export default function Layout({ children, title }: LayoutProps) {
           <div className="mt-auto pt-6 border-t border-glass-border space-y-2">
             <button 
               onClick={toggleTheme}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-black/60 dark:text-white/40 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm font-medium"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[var(--app-text)]/60 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm font-medium"
             >
               <div className="flex items-center gap-3">
                 {profile?.theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                {profile?.theme === 'light' ? 'Mode Sombre' : 'Mode Clair'}
+                {profile?.theme === 'light' ? t('dark_mode') : t('light_mode')}
               </div>
             </button>
             <button 
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/5 transition-all text-sm font-medium"
             >
-              <LogOut className="w-4 h-4" /> Se déconnecter
+              <LogOut className="w-4 h-4" /> {t('logout')}
             </button>
           </div>
         </aside>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col gap-4 md:gap-6 overflow-hidden h-full">
+        <div className="flex-1 flex flex-col gap-4 md:gap-6 min-h-0">
           {/* Top Header */}
           <header className="frosted-glass rounded-[24px] px-4 md:px-8 py-3 md:py-4 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-4">
                <button 
                  onClick={() => setIsMobileMenuOpen(true)}
-                 className="lg:hidden p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-glass-border text-black dark:text-white"
+                 className="lg:hidden p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-glass-border text-[var(--app-text)]"
                >
                   <Menu className="w-6 h-6" />
                </button>
-               <h2 className="hidden md:block text-xs font-bold uppercase tracking-[0.2em] text-black/40 dark:text-white/40">{title}</h2>
+               <h2 className="hidden md:block text-xs font-bold uppercase tracking-[0.2em] text-app-secondary">{title}</h2>
                {location.pathname !== '/dashboard' && (
                  <button 
                    onClick={() => navigate(-1)}
-                   className="p-2 rounded-lg bg-black/5 dark:bg-white/5 text-black dark:text-white flex items-center gap-1 text-[10px] font-bold uppercase"
+                   className="p-2 rounded-lg bg-black/5 dark:bg-white/5 text-[var(--app-text)] flex items-center gap-1 text-[10px] font-bold uppercase"
                  >
-                   <ChevronLeft className="w-3 h-3" /> Retour
+                   <ChevronLeft className="w-3 h-3" /> {t('back')}
                  </button>
                )}
             </div>
             
             <div className="flex items-center gap-2 md:gap-4">
               <div className="hidden sm:flex px-4 py-1.5 rounded-full bg-black/5 dark:bg-white/5 border border-glass-border text-[10px] font-bold uppercase tracking-wider items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00ff66] shadow-[0_0_8px_#00ff66]" /> GPS Actif
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00ff66] shadow-[0_0_8px_#00ff66]" /> {t('active_gps')}
               </div>
               <button 
                 onClick={() => setShowNotifications(true)}
-                className="p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-glass-border text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors relative"
+                className="p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-glass-border text-app-secondary hover:text-[var(--app-text)] transition-colors relative"
               >
                  <Bell className="w-5 h-5" />
                  <span className="absolute top-2 right-2 w-2 h-2 bg-brand-primary rounded-full border-2 border-white dark:border-app-bg" />
               </button>
               <button 
                 onClick={toggleTheme}
-                className="lg:hidden p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-glass-border text-black/40 dark:text-white/40 shadow-sm"
+                className="lg:hidden p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-glass-border text-app-secondary shadow-sm"
               >
                 {profile?.theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
               </button>
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto custom-scrollbar">
+          <main className="flex-1">
             {children}
           </main>
         </div>
@@ -182,7 +238,7 @@ export default function Layout({ children, title }: LayoutProps) {
                       </div>
                       <span className="text-lg font-bold tracking-tighter">Safar'Transpo</span>
                    </div>
-                   <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40">
+                   <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-app-secondary">
                       <X className="w-6 h-6" />
                    </button>
                 </div>
@@ -192,7 +248,7 @@ export default function Layout({ children, title }: LayoutProps) {
                       {profile?.fullName?.substring(0, 2).toUpperCase() || 'ST'}
                    </div>
                    <h4 className="font-bold">{profile?.fullName}</h4>
-                   <p className="text-[10px] text-black/40 dark:text-white/40 uppercase tracking-widest mt-1">{getRoleLabel()}</p>
+                   <p className="text-[10px] text-app-secondary uppercase tracking-widest mt-1">{getRoleLabel()}</p>
                 </div>
 
                 <nav className="flex-1 space-y-2">
@@ -343,10 +399,10 @@ function NavItem({ icon: Icon, label, active = false, onClick }: { icon: any, la
       onClick={onClick}
       className={cn(
         "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group",
-        active ? "bg-brand-primary text-white" : "text-black/40 dark:text-white/40 hover:text-[var(--app-text)] hover:bg-[var(--app-text)]/5"
+        active ? "bg-brand-primary text-white" : "text-app-secondary hover:text-[var(--app-text)] hover:bg-[var(--app-text)]/5"
       )}
     >
-      <Icon className={cn("w-5 h-5", active ? "text-white" : "text-black/20 dark:text-white/20 group-hover:text-black/60 dark:group-hover:text-white/60")} />
+      <Icon className={cn("w-5 h-5", active ? "text-white" : "text-app-icon group-hover:text-app-secondary")} />
       <span className="text-sm font-medium">{label}</span>
       {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />}
     </button>
